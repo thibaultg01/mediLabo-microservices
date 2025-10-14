@@ -3,12 +3,14 @@ import java.net.URI;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*; 
 
 import com.medilabo.patient.model.Patient;
 import com.medilabo.patient.service.PatientService;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 
 import org.springframework.http.HttpStatus;
 import java.net.URI;
@@ -17,27 +19,33 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/patients")
+@Validated
 public class PatientController {
   private final PatientService service;
   public PatientController(PatientService service) { this.service = service; }
 
   @GetMapping
-  public List<Patient> all() { return service.findAll(); }
+  public ResponseEntity<List<Patient>> getAll() {
+      return ResponseEntity.ok(service.findAll());
+  }
 
   @GetMapping("/{id}")
-  public Patient byId(@PathVariable Long id) { return service.findById(id); }
+  public ResponseEntity<Patient> getById(@PathVariable @Min(1) Long id) {
+      Patient p = service.findById(id);
+      return ResponseEntity.ok(p);
+  }
 
   @PostMapping
-  public ResponseEntity<Patient> create(@Valid @RequestBody Patient body) {
-    Patient saved = service.create(body);
-    return ResponseEntity
-      .created(URI.create("/patients/" + saved.getId()))
-      .body(saved);
+  public ResponseEntity<Patient> create(@Valid @RequestBody Patient payload) {
+      Patient created = service.create(payload);
+      URI location = URI.create("/patients/" + created.getId());
+      return ResponseEntity.created(location).body(created);
   }
 
   @PutMapping("/{id}")
-  @ResponseStatus(HttpStatus.NO_CONTENT)
-  public void update(@PathVariable Long id, @Valid @RequestBody Patient body) {
-    service.update(id, body);
+  public ResponseEntity<Patient> update(@PathVariable @Min(1) Long id,
+                                        @Valid @RequestBody Patient payload) {
+      Patient updated = service.update(id, payload);
+      return ResponseEntity.ok(updated);
   }
 }

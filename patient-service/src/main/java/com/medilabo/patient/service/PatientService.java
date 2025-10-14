@@ -7,5 +7,5 @@ public interface PatientService {
   List<Patient> findAll();
   Patient findById(Long id);
   Patient create(Patient p);
-  void update(Long id, Patient p);
+  Patient update(Long id, Patient p);
 }
