@@ -1,0 +1,12 @@
+<a routerLink="/patients">← Retour</a>
+<div *ngIf="loading">Chargement…</div>
+<div *ngIf="error">{{ error }}</div>
+<div *ngIf="patient && !loading">
+  <h2>{{ patient.firstName }} {{ patient.lastName }}</h2>
+  <ul>
+    <li><strong>Naissance :</strong> {{ patient.birthDate }}</li>
+    <li><strong>Genre :</strong> {{ patient.gender }}</li>
+    <li><strong>Adresse :</strong> {{ patient.address || '—' }}</li>
+    <li><strong>Téléphone :</strong> {{ patient.phone || '—' }}</li>
+  </ul>
+</div>
