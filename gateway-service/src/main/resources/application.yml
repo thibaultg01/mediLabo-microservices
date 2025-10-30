@@ -13,6 +13,14 @@ spring:
             - Path=/api/patients/**
           filters:
             - StripPrefix=1
+
+        - id: notes
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/notes/**
+          filters:
+            - StripPrefix=1
+
 management:
   endpoints:
     web:
