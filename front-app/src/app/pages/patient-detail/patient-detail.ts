@@ -11,6 +11,9 @@ import { Note } from '../../core/note.model';
 
 import { HttpErrorResponse } from '@angular/common/http';
 
+import { AssessmentsApiService, Assessment } from '../../core/assessments-api.service';
+import { switchMap, finalize } from 'rxjs/operators';
+
 @Component({
   selector: 'app-patient-detail',
   standalone: true,
@@ -22,6 +25,7 @@ export class PatientDetailComponent {
   private route = inject(ActivatedRoute);
   private api = inject(PatientApiService);
   private notesApi = inject(NotesApiService);
+  private assessmentsApi = inject(AssessmentsApiService);
 
   // Patient
   patient?: Patient;
@@ -43,6 +47,11 @@ export class PatientDetailComponent {
   newNote = '';
   addLoading = false;
 
+  // Assessment
+  assessment?: Assessment | null;
+  assessmentLoading = false;
+  assessmentError: string | null = null;
+
   ngOnInit() {
     const id = Number(this.route.snapshot.paramMap.get('id'));
 
@@ -51,6 +60,7 @@ export class PatientDetailComponent {
         this.patient = p;
         this.loading = false;
         this.loadNotes(id);
+        this.loadAssessment(id);
       },
       error: (e: unknown) => {
         this.error = 'Patient introuvable';
@@ -62,7 +72,7 @@ export class PatientDetailComponent {
 
   startEdit() {
     if (!this.patient) return;
-    this.form = { ...this.patient }; // copie de travail
+    this.form = { ...this.patient };
     this.editMode = true;
     this.saveError = undefined;
   }
@@ -123,6 +133,23 @@ export class PatientDetailComponent {
     });
   }
 
+  private loadAssessment(patientId: number) {
+    this.assessment = null;
+    this.assessmentError = null;
+    this.assessmentLoading = true;
+
+    this.assessmentsApi
+      .getByPatientId(patientId)
+      .pipe(finalize(() => (this.assessmentLoading = false)))
+      .subscribe({
+        next: (a) => (this.assessment = a),
+        error: (err) => {
+          console.error(err);
+          this.assessmentError = 'Impossible de récupérer l’évaluation.';
+        },
+      });
+  }
+
   addNote() {
     if (!this.patient || !this.newNote?.trim()) return;
 
@@ -144,6 +171,7 @@ export class PatientDetailComponent {
           this.notes = [created, ...(this.notes ?? [])];
           this.newNote = '';
           this.addLoading = false;
+          this.loadAssessment(this.patient!.id!);
         },
         error: (err) => {
           console.error(err);
@@ -154,5 +182,46 @@ export class PatientDetailComponent {
   }
   getContent(n: Note): string {
     return (n as any).content ?? (n as any).note ?? (n as any).text ?? (n as any).comment ?? '';
+  }
+
+  riskOf(a: any): string {
+    const raw =
+      a?.risk ??
+      a?.riskLevel ??
+      a?.risk_level ??
+      a?.result ??
+      a?.assessment ??
+      a?.diabetesRisk ??
+      a?.diabetes_assessment ??
+      a?.category ??
+      '';
+    return (raw ?? '').toString();
+  }
+
+  normalizedRisk(a: any): string {
+    const v = this.riskOf(a).toLowerCase().trim();
+    if (!v) return '';
+
+    if (v.includes('early')) return 'EarlyOnset';
+    if (v.includes('danger') || v.includes('in danger')) return 'InDanger';
+    if (v.includes('border')) return 'Borderline';
+    if (v.includes('none') || v.includes('aucun') || v.includes('no risk')) return 'None';
+
+    if (['earlyonset', 'indanger', 'borderline', 'none'].includes(v.replace(/\s+/g, ''))) {
+      const map: any = {
+        earlyonset: 'EarlyOnset',
+        indanger: 'InDanger',
+        borderline: 'Borderline',
+        none: 'None',
+      };
+      return map[v.replace(/\s+/g, '')];
+    }
+    return this.riskOf(a);
+  }
+
+  triggersOf(a: any): number | null {
+    const t =
+      a?.triggers ?? a?.triggerCount ?? a?.totalTriggers ?? a?.nbTriggers ?? a?.count ?? null;
+    return typeof t === 'number' ? t : t != null ? Number(t) : null;
   }
 }

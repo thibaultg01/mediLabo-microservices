@@ -1,26 +1,41 @@
-<h1>Patients</h1>
-<div *ngIf="loading">Chargement…</div>
-<div *ngIf="error">{{ error }}</div>
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Patients</h1>
+    <button class="btn btn-primary" [routerLink]="['/patients', 'new']">
+      + Ajouter un patient
+    </button>
+  </div>
 
-<table *ngIf="!loading && !error">
-  <thead>
-    <tr>
-      <th>Id</th>
-      <th>Nom</th>
-      <th>Prénom</th>
-      <th>Naissance</th>
-      <th>Genre</th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let p of patients">
-      <td>{{ p.id }}</td>
-      <td>{{ p.lastName }}</td>
-      <td>{{ p.firstName }}</td>
-      <td>{{ p.birthDate }}</td>
-      <td>{{ p.gender }}</td>
-      <td><a [routerLink]="['/patients', p.id]">Voir</a></td>
-    </tr>
-  </tbody>
-</table>
+  <div *ngIf="loading" class="alert alert--info">Chargement des patients…</div>
+
+  <div *ngIf="error" class="alert alert--error">
+    {{ error }}
+  </div>
+
+  <div *ngIf="!loading && !error" class="card">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Id</th>
+          <th>Nom</th>
+          <th>Prénom</th>
+          <th>Naissance</th>
+          <th>Genre</th>
+          <th class="table-actions-col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of patients">
+          <td>{{ p.id }}</td>
+          <td>{{ p.lastName }}</td>
+          <td>{{ p.firstName }}</td>
+          <td>{{ p.birthDate }}</td>
+          <td>{{ p.gender }}</td>
+          <td class="table-actions">
+            <a class="link" [routerLink]="['/patients', p.id]"> Voir le dossier </a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -4,7 +4,6 @@ import { environment } from '../../environments/environment';
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const { basicAuthUser, basicAuthPassword } = environment;
 
-  // Ne fait rien si les creds ne sont pas définis (pratique pour la prod)
   if (!basicAuthUser || !basicAuthPassword) {
     return next(req);
   }

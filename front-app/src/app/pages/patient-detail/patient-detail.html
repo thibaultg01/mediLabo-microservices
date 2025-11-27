@@ -1,95 +1,188 @@
-<a routerLink="/patients">← Retour</a>
-<div *ngIf="loading">Chargement…</div>
-<div *ngIf="error" class="error">{{ error }}</div>
-<div *ngIf="patient && !loading">
-  <h2>{{ patient.firstName }} {{ patient.lastName }}</h2>
-  <div *ngIf="!editMode">
-    <ul>
-      <li><strong>Naissance :</strong> {{ patient.birthDate }}</li>
-      <li><strong>Genre :</strong> {{ patient.gender }}</li>
-      <li><strong>Adresse :</strong> {{ patient.address || '—' }}</li>
-      <li><strong>Téléphone :</strong> {{ patient.phone || '—' }}</li>
-    </ul>
-
-    <button (click)="startEdit()">Modifier</button>
+<div class="page">
+  <div class="page-header">
+    <a routerLink="/patients" class="back-link">← Retour à la liste</a>
   </div>
 
-  <form *ngIf="editMode" #f="ngForm" (ngSubmit)="save(f)" novalidate>
-    <div>
-      <label>Prénom *</label>
-      <input name="firstName" [(ngModel)]="form.firstName" required />
-    </div>
+  <div *ngIf="loading" class="alert alert--info">Chargement du patient…</div>
 
-    <div>
-      <label>Nom *</label>
-      <input name="lastName" [(ngModel)]="form.lastName" required />
-    </div>
+  <div *ngIf="error" class="alert alert--error">
+    {{ error }}
+  </div>
 
-    <div>
-      <label>Date de naissance *</label>
-      <input type="date" name="birthDate" [(ngModel)]="form.birthDate" required />
-    </div>
+  <div *ngIf="patient && !loading" class="layout">
+    <div class="left-column">
+      <div class="card card-patient">
+        <h2 class="card-title">{{ patient.firstName }} {{ patient.lastName }}</h2>
 
-    <div>
-      <label>Genre *</label>
-      <select name="gender" [(ngModel)]="form.gender" required>
-        <option value="" disabled>— choisir —</option>
-        <option value="M">M</option>
-        <option value="F">F</option>
-      </select>
-    </div>
+        <section class="assessment" aria-labelledby="assessment-title">
+          <h3 id="assessment-title" class="section-title">Évaluation du risque de diabète</h3>
 
-    <div>
-      <label>Adresse (optionnelle)</label>
-      <input name="address" [(ngModel)]="form.address" />
-    </div>
+          <div *ngIf="assessmentLoading" class="text-muted">Calcul de l’évaluation…</div>
+          <div *ngIf="assessmentError" class="alert alert--error">
+            {{ assessmentError }}
+          </div>
 
-    <div>
-      <label>Téléphone (optionnel)</label>
-      <input name="phone" [(ngModel)]="form.phone" />
-    </div>
+          <div *ngIf="!assessmentLoading && !assessmentError">
+            <ng-container *ngIf="assessment as a; else noAssessment">
+              <p class="risk-line">
+                <span class="risk-label">Risque :</span>
+                <span
+                  class="badge"
+                  [class.badge--none]="normalizedRisk(a) === 'None'"
+                  [class.badge--borderline]="normalizedRisk(a) === 'Borderline'"
+                  [class.badge--indanger]="normalizedRisk(a) === 'InDanger'"
+                  [class.badge--early]="normalizedRisk(a) === 'EarlyOnset'"
+                >
+                  {{ normalizedRisk(a) || '—' }}
+                </span>
+              </p>
 
-    <div *ngIf="saveError" class="error">{{ saveError }}</div>
+              <p *ngIf="triggersOf(a) != null" class="text-muted">
+                Déclencheurs détectés : {{ triggersOf(a) }}
+              </p>
 
-    <button type="submit" [disabled]="saving || f.invalid">Enregistrer</button>
-    <button type="button" (click)="cancelEdit()" [disabled]="saving">Annuler</button>
-    <span *ngIf="saving">Enregistrement…</span>
-  </form>
+              <p *ngIf="a.lastUpdated" class="text-muted">
+                Mis à jour : {{ a.lastUpdated | date : 'short' }}
+              </p>
+            </ng-container>
 
-  <section aria-labelledby="notes-title">
-    <h3 id="notes-title">Notes du patient</h3>
+            <ng-template #noAssessment>
+              <p class="text-muted">Aucune évaluation disponible.</p>
+            </ng-template>
+          </div>
+        </section>
 
-    <div *ngIf="notesLoading">Chargement des notes…</div>
-    <div *ngIf="notesError" class="error">{{ notesError }}</div>
+        <!-- Affichage "lecture seule" -->
+        <div *ngIf="!editMode" class="patient-info">
+          <ul class="info-list">
+            <li>
+              <span class="label">Naissance :</span>
+              <span>{{ patient.birthDate }}</span>
+            </li>
+            <li>
+              <span class="label">Genre :</span>
+              <span>{{ patient.gender }}</span>
+            </li>
+            <li>
+              <span class="label">Adresse :</span>
+              <span>{{ patient.address || '—' }}</span>
+            </li>
+            <li>
+              <span class="label">Téléphone :</span>
+              <span>{{ patient.phone || '—' }}</span>
+            </li>
+          </ul>
 
-    <ul *ngIf="notes && notes.length > 0">
-      <li *ngFor="let n of notes">
-        <div>{{ n.content || n.note }}</div>
-        <small class="note-meta" *ngIf="n.createdAt">
-          Créée le {{ n.createdAt | date : 'short' }}
-        </small>
-      </li>
-    </ul>
-    <p *ngIf="notes && notes.length === 0">Aucune note.</p>
+          <button class="btn btn-primary" (click)="startEdit()">Modifier les informations</button>
+        </div>
 
-    <!-- Formulaire d'ajout -->
-    <form (ngSubmit)="addNote()" #noteForm="ngForm" class="note-form">
-      <label for="note-content" class="sr-only">Nouvelle note</label>
-      <textarea
-        id="note-content"
-        name="content"
-        [(ngModel)]="newNote"
-        required
-        rows="3"
-        placeholder="Ajouter une note…"
-        [disabled]="addLoading"
-      ></textarea>
+        <!-- Formulaire d'édition -->
+        <form *ngIf="editMode" #f="ngForm" (ngSubmit)="save(f)" novalidate class="form">
+          <div class="form-row">
+            <label>Prénom *</label>
+            <input name="firstName" [(ngModel)]="form.firstName" required />
+          </div>
 
-      <div class="actions">
-        <button type="submit" [disabled]="noteForm.invalid || addLoading">
-          {{ addLoading ? 'Ajout…' : 'Ajouter' }}
-        </button>
+          <div class="form-row">
+            <label>Nom *</label>
+            <input name="lastName" [(ngModel)]="form.lastName" required />
+          </div>
+
+          <div class="form-row">
+            <label>Date de naissance *</label>
+            <input type="date" name="birthDate" [(ngModel)]="form.birthDate" required />
+          </div>
+
+          <div class="form-row">
+            <label>Genre *</label>
+            <select name="gender" [(ngModel)]="form.gender" required>
+              <option value="" disabled>— choisir —</option>
+              <option value="M">M</option>
+              <option value="F">F</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <label>Adresse (optionnelle)</label>
+            <input name="address" [(ngModel)]="form.address" />
+          </div>
+
+          <div class="form-row">
+            <label>Téléphone (optionnel)</label>
+            <input name="phone" [(ngModel)]="form.phone" />
+          </div>
+
+          <div *ngIf="saveError" class="alert alert--error">
+            {{ saveError }}
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" [disabled]="saving || f.invalid">
+              Enregistrer
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              (click)="cancelEdit()"
+              [disabled]="saving"
+            >
+              Annuler
+            </button>
+            <span *ngIf="saving" class="text-muted">Enregistrement…</span>
+          </div>
+        </form>
       </div>
-    </form>
-  </section>
+    </div>
+
+    <!-- Colonne droite : notes -->
+    <div class="right-column">
+      <section class="card card-notes" aria-labelledby="notes-title">
+        <h3 id="notes-title" class="card-title">Notes du patient</h3>
+
+        <div *ngIf="notesLoading" class="text-muted">Chargement des notes…</div>
+        <div *ngIf="notesError" class="alert alert--error">
+          {{ notesError }}
+        </div>
+
+        <!-- Liste des notes -->
+        <ul *ngIf="notes && notes.length > 0" class="notes-list">
+          <li *ngFor="let n of notes" class="note-item">
+            <div class="note-content">
+              {{ n.content || n.note }}
+            </div>
+            <small class="note-meta" *ngIf="n.createdAt">
+              Créée le {{ n.createdAt | date : 'short' }}
+            </small>
+          </li>
+        </ul>
+
+        <p *ngIf="notes && notes.length === 0" class="text-muted">Aucune note.</p>
+
+        <!-- Formulaire d'ajout -->
+        <form (ngSubmit)="addNote()" #noteForm="ngForm" class="note-form">
+          <label for="note-content" class="sr-only"> Nouvelle note </label>
+          <textarea
+            id="note-content"
+            name="content"
+            [(ngModel)]="newNote"
+            required
+            rows="3"
+            placeholder="Ajouter une note…"
+            [disabled]="addLoading"
+            class="textarea"
+          ></textarea>
+
+          <div class="note-actions">
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="noteForm.invalid || addLoading"
+            >
+              {{ addLoading ? 'Ajout…' : 'Ajouter' }}
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </div>
 </div>
