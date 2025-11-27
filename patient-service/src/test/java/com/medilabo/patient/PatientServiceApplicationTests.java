@@ -6,10 +6,4 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
 class PatientServiceApplicationTests {
-
-	@Test
-	@Disabled("Disabled in CI")
-	void contextLoads() {
-	}
-
 }
