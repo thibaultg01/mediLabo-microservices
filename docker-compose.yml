@@ -1,0 +1,110 @@
+services:
+  notes-mongo:
+    image: mongo:7
+    container_name: notes-mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: notesdb
+    volumes:
+      - notes-mongo-data:/data/db
+      - ./docker/mongo-notes-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  notes-service:
+    build:
+      context: ./notes-service
+      dockerfile: Dockerfile
+    container_name: notes-service
+    restart: always
+    depends_on:
+      notes-mongo:
+        condition: service_healthy
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://notes-mongo:27017/notesdb
+    ports:
+      - "8082:8082"
+
+  mysql:
+    image: mysql:8
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: patientsdb
+      MYSQL_USER: app
+      MYSQL_PASSWORD: app
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  patient-service:
+    build:
+      context: ./patient-service
+    container_name: patient-service
+    restart: always
+    depends_on:
+      - mysql
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:mysql://mysql:3306/patientsdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USERNAME: app
+      DB_PASSWORD: app
+    ports:
+      - "8081:8081"
+
+  assessment-service:
+    build:
+      context: ./assessment-service
+    container_name: assessment-service
+    restart: always
+    depends_on:
+      - patient-service
+      - notes-service
+    environment:
+      PATIENTS_URL: http://gateway-service:8080/api/patients
+      NOTES_URL: http://gateway-service:8080/api/notes
+      BASIC_USER: user
+      BASIC_PASS: password
+    ports:
+      - "8083:8083"
+
+  gateway-service:
+    build:
+      context: ./gateway-service
+    container_name: gateway-service
+    restart: always
+    depends_on:
+      - patient-service
+      - notes-service
+      - assessment-service
+    environment:
+      PATIENT_SERVICE_URL: http://patient-service:8081
+      NOTES_SERVICE_URL: http://notes-service:8082
+      ASSESSMENT_SERVICE_URL: http://assessment-service:8083
+      BASIC_USER: user
+      BASIC_PASS: password
+    ports:
+      - "8080:8080"
+
+  front-app:
+    build:
+      context: ./front-app
+      dockerfile: Dockerfile
+    container_name: front-app
+    restart: always
+    depends_on:
+      - gateway-service
+    ports:
+      - "4200:80"
+
+volumes:
+  notes-mongo-data:
+  mysql-data:

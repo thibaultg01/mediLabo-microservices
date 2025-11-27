@@ -4,20 +4,30 @@ server:
 spring:
   application:
     name: gateway-service
+
   cloud:
     gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
       routes:
-        - id: patients
-          uri: http://localhost:8081
+        - id: patient-service
+          uri: ${PATIENT_SERVICE_URL:http://localhost:8081}
           predicates:
             - Path=/api/patients/**
           filters:
             - StripPrefix=1
 
-        - id: notes
-          uri: http://localhost:8082
+        - id: notes-service
+          uri: ${NOTES_SERVICE_URL:http://localhost:8082}
           predicates:
             - Path=/api/notes/**
+          filters:
+            - StripPrefix=1
+
+        - id: assessment-service
+          uri: ${ASSESSMENT_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/assess/**
           filters:
             - StripPrefix=1
 
