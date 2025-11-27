@@ -1,0 +1,25 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: assessment-service
+
+app:
+  patients-base-url: ${PATIENTS_URL:http://localhost:8080/api/patients}
+  notes-base-url: ${NOTES_URL:http://localhost:8080/api/notes}
+
+  auth:
+    username: user
+    password: password
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    org.springframework.web.reactive.function.client: DEBUG
+    com.medilabo.assessment: DEBUG
