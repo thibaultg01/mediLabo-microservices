@@ -7,8 +7,6 @@ import com.medilabo.notes.model.Note;
 import com.medilabo.notes.repository.NoteRepository;
 import com.medilabo.notes.service.NoteService;
 
-import lombok.RequiredArgsConstructor;
-
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -19,7 +17,6 @@ import java.time.Instant;
 
 
 @Service
-@RequiredArgsConstructor
 public class NoteServiceImpl implements NoteService {
 
     private final NoteRepository repo;

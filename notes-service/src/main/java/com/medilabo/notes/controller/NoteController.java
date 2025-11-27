@@ -6,7 +6,6 @@ import com.medilabo.notes.dto.UpdateNoteRequest;
 import com.medilabo.notes.model.Note;
 import com.medilabo.notes.service.NoteService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -22,7 +21,6 @@ import java.net.URI;
 
 @RestController
 @RequestMapping(value = "/notes", produces = "application/json")
-@RequiredArgsConstructor
 public class NoteController {
 
     private final NoteService service;
