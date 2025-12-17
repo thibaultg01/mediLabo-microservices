@@ -96,3 +96,50 @@ front-service : Web user interface
 ```bash
 docker-compose up --build
 ```
+
+## Green Code Considerations
+
+This project integrates Green Code principles by focusing on reducing unnecessary
+resource consumption while maintaining performance and reliability.
+
+Identified Green Code Improvements
+
+1. Reduce unnecessary inter-service calls
+
+Avoid redundant REST calls between microservices.
+
+Cache frequently accessed data (e.g. patient information) to limit network usage.
+
+2. Optimize memory usage
+
+Use lightweight DTOs instead of full entities.
+
+Avoid loading unnecessary data from databases.
+
+Prefer simple loops over heavy stream operations for large collections.
+
+3. Database optimization
+
+Use MongoDB indexes on frequently queried fields (e.g. patientId).
+
+Optimize SQL schemas by using appropriate column types and indexes.
+
+4. Frontend optimization
+
+Limit HTTP requests by updating UI state locally when possible.
+
+Reduce unnecessary page reloads and component re-rendering.
+
+5. Docker and infrastructure efficiency
+
+Use lightweight Docker images (JRE / Alpine based).
+
+Limit CPU and memory usage for containers.
+
+Avoid running unused services in production.
+
+6. Logging optimization
+
+Reduce log verbosity in production environments.
+
+Avoid excessive debug logs to limit I/O and disk usage.
