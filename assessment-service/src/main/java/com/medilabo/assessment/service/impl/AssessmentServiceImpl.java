@@ -2,11 +2,15 @@ package com.medilabo.assessment.service.impl;
 
 import com.medilabo.assessment.controller.AssessmentController;
 import com.medilabo.assessment.dto.AssessmentDto;
+import com.medilabo.assessment.dto.NlpExtractRequest;
+import com.medilabo.assessment.dto.NlpExtractResponse;
 import com.medilabo.assessment.dto.NoteDto;
 import com.medilabo.assessment.dto.PatientDto;
 import com.medilabo.assessment.model.RiskLevel;
 import com.medilabo.assessment.service.AssessmentService;
 import com.medilabo.assessment.utils.TriggerAnalyzer;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
@@ -20,10 +24,17 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import org.springframework.web.reactive.function.client.WebClient;
 
 @Service
 public class AssessmentServiceImpl implements AssessmentService {
 
+	@Autowired
+	private WebClient.Builder webClientBuilder;
+	
+	@Value("${app.nlp-base-url}")
+	private String nlpBaseUrl;
+	
 	private final RestClient http;
 	private final String patientsBaseUrl;
 	private final String notesBaseUrl;
@@ -47,13 +58,28 @@ public class AssessmentServiceImpl implements AssessmentService {
 				});
 		if (notes == null)
 			notes = List.of();
-		logger.info("date naissance : " + patient.getBirthdate());
-		int age = computeAge(patient.getBirthdate());
-		int triggers = TriggerAnalyzer.countTriggers(notes);
-		RiskLevel level = computeRisk(age, safeSex(patient.getSex()), triggers);
+		// Construit la requete NLP
+				List<NlpExtractRequest.NoteItem> noteItems = notes.stream()
+				        .map(n -> new NlpExtractRequest.NoteItem(n.getId(), n.getNote()))
+				        .toList();
 
-		return new AssessmentDto(patient.getLastName(), age, level, triggers);
-	}
+				NlpExtractRequest nlpRequest = new NlpExtractRequest(noteItems);
+
+				// Appele le service Python
+				NlpExtractResponse nlpResponse = webClientBuilder.build()
+				        .post()
+				        .uri(nlpBaseUrl + "/nlp/extract-triggers")
+				        .bodyValue(nlpRequest)
+				        .retrieve()
+				        .bodyToMono(NlpExtractResponse.class)
+				        .block();
+
+				int triggerCount = nlpResponse.getTotalTriggers();
+				int age = computeAge(patient.getBirthdate());
+				RiskLevel level = computeRisk(age, safeSex(patient.getSex()), triggerCount);
+
+				return new AssessmentDto(patient.getLastName(), age, level, triggerCount);
+			}
 
 	private int computeAge(String birthdateIso) {
 		if (birthdateIso == null || birthdateIso.isBlank()) {
