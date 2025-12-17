@@ -17,6 +17,41 @@ services:
       retries: 3
       start_period: 10s
 
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./docker/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+      - "8889:8889"   # Metrics for Prometheus
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: always
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    depends_on:
+      - otel-collector
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
   notes-service:
     image: thibaultg01/notes-service:latest
     build:
@@ -27,8 +62,17 @@ services:
     depends_on:
       notes-mongo:
         condition: service_healthy
+      otel-collector:
+        condition: service_started
     environment:
       SPRING_DATA_MONGODB_URI: mongodb://notes-mongo:27017/notesdb
+
+      OTEL_SERVICE_NAME: notes-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: otlp
+      OTEL_LOGS_EXPORTER: "none"
     ports:
       - "8082:8082"
 
@@ -54,11 +98,21 @@ services:
     restart: always
     depends_on:
       - mysql
+      - otel-collector
     environment:
       SPRING_PROFILES_ACTIVE: prod
       DB_URL: jdbc:mysql://mysql:3306/patientsdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       DB_USERNAME: app
       DB_PASSWORD: app
+      BASIC_USER: user
+      BASIC_PASS: password
+
+      OTEL_SERVICE_NAME: patient-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: otlp
+      OTEL_LOGS_EXPORTER: "none"
     ports:
       - "8081:8081"
 
@@ -71,11 +125,21 @@ services:
     depends_on:
       - patient-service
       - notes-service
+      - otel-collector
+      - nlp-service
     environment:
+      NLP_URL: http://nlp-service:8000
       PATIENTS_URL: http://gateway-service:8080/api/patients
       NOTES_URL: http://gateway-service:8080/api/notes
       BASIC_USER: user
       BASIC_PASS: password
+
+      OTEL_SERVICE_NAME: assessment-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: otlp
+      OTEL_LOGS_EXPORTER: "none"
     ports:
       - "8083:8083"
 
@@ -89,12 +153,20 @@ services:
       - patient-service
       - notes-service
       - assessment-service
+      - otel-collector
     environment:
       PATIENT_SERVICE_URL: http://patient-service:8081
       NOTES_SERVICE_URL: http://notes-service:8082
       ASSESSMENT_SERVICE_URL: http://assessment-service:8083
       BASIC_USER: user
       BASIC_PASS: password
+
+      OTEL_SERVICE_NAME: gateway-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: otlp
+      OTEL_LOGS_EXPORTER: "none"
     ports:
       - "8080:8080"
 
@@ -110,6 +182,38 @@ services:
     ports:
       - "4200:80"
 
+  nlp-service:
+    build:
+      context: ./nlp-service
+      dockerfile: Dockerfile
+    container_name: nlp-service
+    restart: always
+    depends_on:
+      - otel-collector
+    environment:
+      OTEL_SERVICE_NAME: nlp-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: otlp
+      OTEL_LOGS_EXPORTER: "none"
+      OTEL_RESOURCE_ATTRIBUTES: service.namespace=medilabo,service.version=1.0.0
+    ports:
+      - "8000:8000"
+
+  mongodb-exporter:
+    image: percona/mongodb_exporter:0.40.0
+    container_name: mongodb-exporter
+    restart: always
+    command:
+      - --mongodb.uri=mongodb://notes-mongo:27017
+    ports:
+      - "9216:9216"
+    depends_on:
+      notes-mongo:
+        condition: service_healthy
+
 volumes:
   notes-mongo-data:
   mysql-data:
+  grafana_data:

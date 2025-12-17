@@ -8,6 +8,7 @@ spring:
 app:
   patients-base-url: ${PATIENTS_URL:http://localhost:8080/api/patients}
   notes-base-url: ${NOTES_URL:http://localhost:8080/api/notes}
+  nlp-base-url: ${NLP_URL:http://localhost:8000}
 
   auth:
     username: user
