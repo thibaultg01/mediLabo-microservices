@@ -1,4 +1,4 @@
-package com.medilabo.notes.config;
+package com.medilabo.patient.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -13,15 +13,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-/**
- * Spring Security configuration for the Notes microservice.
- *
- * All endpoints are secured using HTTP Basic authentication.
- * Credentials are read from configuration, and the password is encoded
- * at startup using BCrypt before being stored in memory.
- *
- * This service is configured as stateless (REST API).
- */
+
 @Configuration
 public class SecurityConfig {
 

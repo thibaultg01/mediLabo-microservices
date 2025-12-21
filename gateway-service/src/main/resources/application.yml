@@ -36,3 +36,7 @@ management:
     web:
       exposure:
         include: health,info,gateway
+app:
+  auth:
+    username: ${APP_AUTH_USERNAME:user}
+    password: ${APP_AUTH_PASSWORD:password}

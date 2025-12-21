@@ -10,8 +10,8 @@ app:
   notes-base-url: ${NOTES_URL:http://localhost:8080/api/notes}
 
   auth:
-    username: user
-    password: password
+    username: ${APP_AUTH_USERNAME:user}
+    password: ${APP_AUTH_PASSWORD:password}
 
 management:
   endpoints:

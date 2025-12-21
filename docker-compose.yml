@@ -29,6 +29,8 @@ services:
         condition: service_healthy
     environment:
       SPRING_DATA_MONGODB_URI: mongodb://notes-mongo:27017/notesdb
+      APP_AUTH_USERNAME: user
+      APP_AUTH_PASSWORD: password
     ports:
       - "8082:8082"
 
@@ -59,6 +61,8 @@ services:
       DB_URL: jdbc:mysql://mysql:3306/patientsdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       DB_USERNAME: app
       DB_PASSWORD: app
+      APP_AUTH_USERNAME: user
+      APP_AUTH_PASSWORD: password
     ports:
       - "8081:8081"
 
@@ -74,8 +78,8 @@ services:
     environment:
       PATIENTS_URL: http://gateway-service:8080/api/patients
       NOTES_URL: http://gateway-service:8080/api/notes
-      BASIC_USER: user
-      BASIC_PASS: password
+      APP_AUTH_USERNAME: user
+      APP_AUTH_PASSWORD: password
     ports:
       - "8083:8083"
 
@@ -93,8 +97,8 @@ services:
       PATIENT_SERVICE_URL: http://patient-service:8081
       NOTES_SERVICE_URL: http://notes-service:8082
       ASSESSMENT_SERVICE_URL: http://assessment-service:8083
-      BASIC_USER: user
-      BASIC_PASS: password
+      APP_AUTH_USERNAME: user
+      APP_AUTH_PASSWORD: password
     ports:
       - "8080:8080"
 
