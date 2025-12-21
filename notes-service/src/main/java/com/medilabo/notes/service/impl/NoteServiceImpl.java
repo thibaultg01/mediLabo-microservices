@@ -15,55 +15,89 @@ import java.util.Optional;
 
 import java.time.Instant;
 
-
 @Service
 public class NoteServiceImpl implements NoteService {
 
-    private final NoteRepository repo;
+	private final NoteRepository repo;
 
-    public NoteServiceImpl(NoteRepository repo) {
-        this.repo = repo;
-      }
-    
-    @Override
-    public List<Note> findAll() {
-        return repo.findAll();
-    }
+	/**
+	 * Constructor injecting the note repository.
+	 *
+	 * @param repo repository used for note persistence
+	 */
+	public NoteServiceImpl(NoteRepository repo) {
+		this.repo = repo;
+	}
 
-    @Override
-    public List<Note> findByPatId(Long patId) {
-        return repo.findByPatId(patId);
-    }
+	/**
+	 * Retrieves all stored notes.
+	 *
+	 * @return list of all notes
+	 */
+	@Override
+	public List<Note> findAll() {
+		return repo.findAll();
+	}
 
-    @Override
-    public Optional<Note> findById(String id) {
-        return repo.findById(id);
-    }
+	/**
+	 * Retrieves all notes associated with a given patient.
+	 *
+	 * @param patId patient identifier
+	 * @return list of notes for the patient
+	 */
+	@Override
+	public List<Note> findByPatId(Long patId) {
+		return repo.findByPatId(patId);
+	}
 
-    @Override
-    public Note create(CreateNoteRequest req) {
-        Note n = new Note();
-        n.setPatId(req.patId());
-        n.setPatient(req.patient());
-        n.setNote(req.note());
-        n.setCreatedAt(Instant.now());
-        return repo.save(n);
-    }
+	/**
+	 * Retrieves a note by its identifier.
+	 *
+	 * @param id note identifier
+	 * @return optional note
+	 */
+	@Override
+	public Optional<Note> findById(String id) {
+		return repo.findById(id);
+	}
 
-    @Override
-    public Optional<Note> update(String id, UpdateNoteRequest req) {
-        return repo.findById(id).map(existing -> {
-            existing.setNote(req.note());
-            return repo.save(existing);
-        });
-    }
+	/**
+	 * Creates and persists a new medical note.
+	 *
+	 * @param req request payload containing note data
+	 * @return persisted note
+	 */
+	@Override
+	public Note create(CreateNoteRequest req) {
+		Note n = new Note();
+		n.setPatId(req.patId());
+		n.setPatient(req.patient());
+		n.setNote(req.note());
+		n.setCreatedAt(Instant.now());
+		return repo.save(n);
+	}
 
-    @Override
-    public boolean delete(String id) {
-        if (repo.existsById(id)) {
-            repo.deleteById(id);
-            return true;
-        }
-        return false;
-    }
+	/**
+	 * Updates the content of an existing medical note.
+	 *
+	 * @param id  note identifier
+	 * @param req request payload containing updated content
+	 * @return optional updated note
+	 */
+	@Override
+	public Optional<Note> update(String id, UpdateNoteRequest req) {
+		return repo.findById(id).map(existing -> {
+			existing.setNote(req.note());
+			return repo.save(existing);
+		});
+	}
+
+	@Override
+	public boolean delete(String id) {
+		if (repo.existsById(id)) {
+			repo.deleteById(id);
+			return true;
+		}
+		return false;
+	}
 }

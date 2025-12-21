@@ -12,15 +12,21 @@ import org.apache.logging.log4j.Logger;
 
 public final class TriggerAnalyzer {
 
-	 private static final Logger logger = LogManager.getLogger(TriggerAnalyzer.class);
-	 
+	private static final Logger logger = LogManager.getLogger(TriggerAnalyzer.class);
+
 	private static final Set<String> TRIGGERS = Set.of("hemoglobine a1c", "microalbumine", "taille", "poids", "fumeur",
-			"fumeuse", "anormal", "cholesterol", "vertige", "rechute", "reaction",
-			"anticorps");
+			"fumeuse", "anormal", "cholesterol", "vertige", "rechute", "reaction", "anticorps");
 
 	private TriggerAnalyzer() {
 	}
 
+	/**
+	 * Counts the number of distinct trigger terms found in the provided medical
+	 * notes.
+	 *
+	 * @param notes list of medical notes
+	 * @return number of detected trigger terms
+	 */
 	public static int countTriggers(List<NoteDto> notes) {
 		if (notes == null || notes.isEmpty())
 			return 0;
@@ -30,16 +36,22 @@ public final class TriggerAnalyzer {
 
 		int count = 0;
 		for (String t : TRIGGERS) {
-			if (all.contains(t))
-			{
+			if (all.contains(t)) {
 				logger.info(t);
 				count++;
 			}
-				
+
 		}
 		return count;
 	}
 
+	/**
+	 * Normalizes a string by: - converting to lowercase - removing diacritical
+	 * marks - standardizing known variations
+	 *
+	 * @param text raw input text
+	 * @return normalized text
+	 */
 	private static String normalize(String s) {
 		String lower = s.toLowerCase();
 		String norm = Normalizer.normalize(lower, Normalizer.Form.NFD).replaceAll("\\p{M}", "");

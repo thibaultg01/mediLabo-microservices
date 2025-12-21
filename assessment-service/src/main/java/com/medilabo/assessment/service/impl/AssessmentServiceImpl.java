@@ -27,8 +27,14 @@ public class AssessmentServiceImpl implements AssessmentService {
 	private final RestClient http;
 	private final String patientsBaseUrl;
 	private final String notesBaseUrl;
-	private static final Logger logger = LogManager.getLogger(AssessmentServiceImpl.class);
 
+	/**
+	 * Constructs the service with required dependencies and configuration.
+	 *
+	 * @param http RestClient used to call external microservices
+	 * @param patientsBaseUrl base URL of the patient microservice
+	 * @param notesBaseUrl base URL of the notes microservice
+	 */
 	public AssessmentServiceImpl(RestClient http, @Value("${app.patients-base-url}") String patientsBaseUrl,
 			@Value("${app.notes-base-url}") String notesBaseUrl) {
 		this.http = http;
@@ -36,6 +42,20 @@ public class AssessmentServiceImpl implements AssessmentService {
 		this.notesBaseUrl = notesBaseUrl;
 	}
 
+	/**
+	 * Computes the diabetes risk assessment for a given patient ID.
+	 *
+	 * The method:
+	 * - retrieves patient demographic data
+	 * - retrieves all medical notes related to the patient
+	 * - computes patient age
+	 * - counts trigger terms in medical notes
+	 * - determines the diabetes risk level
+	 *
+	 * @param patientId unique identifier of the patient
+	 * @return an AssessmentDto containing the assessment result
+	 * @throws IllegalArgumentException if the patient cannot be found
+	 */
 	@Override
 	public AssessmentDto assessByPatientId(long patientId) {
 		PatientDto patient = http.get().uri(patientsBaseUrl + "/" + patientId).retrieve().body(PatientDto.class);
@@ -47,7 +67,6 @@ public class AssessmentServiceImpl implements AssessmentService {
 				});
 		if (notes == null)
 			notes = List.of();
-		logger.info("date naissance : " + patient.getBirthdate());
 		int age = computeAge(patient.getBirthdate());
 		int triggers = TriggerAnalyzer.countTriggers(notes);
 		RiskLevel level = computeRisk(age, safeSex(patient.getSex()), triggers);
@@ -55,6 +74,12 @@ public class AssessmentServiceImpl implements AssessmentService {
 		return new AssessmentDto(patient.getLastName(), age, level, triggers);
 	}
 
+	/**
+	 * Computes the patient's age from an ISO-8601 birthdate string.
+	 *
+	 * @param birthdateIso birthdate in ISO format (yyyy-MM-dd)
+	 * @return age in years, or 0 if birthdate is missing or invalid
+	 */
 	private int computeAge(String birthdateIso) {
 		if (birthdateIso == null || birthdateIso.isBlank()) {
 			return 0;
@@ -63,19 +88,32 @@ public class AssessmentServiceImpl implements AssessmentService {
 		return Period.between(dob, LocalDate.now()).getYears();
 	}
 
+	/**
+	 * Safely normalizes the patient's sex value.
+	 *
+	 * @param sex raw sex value
+	 * @return trimmed sex value or empty string if null
+	 */
 	private String safeSex(String sex) {
 		if (sex == null)
 			return "";
 		return sex.trim();
 	}
 
+	/**
+	 * Determines the diabetes risk level based on age, sex, and trigger count.
+	 *
+	 * @param age patient age
+	 * @param sex patient sex
+	 * @param triggerCount number of detected trigger terms
+	 * @return computed RiskLevel
+	 */
 	private RiskLevel computeRisk(int age, String sex, int triggerCount) {
 		if (triggerCount == 0)
 			return RiskLevel.NONE;
 
 		boolean over30 = age > 30;
 		boolean male = "M".equalsIgnoreCase(sex);
-		logger.info("sex : " + male);
 		boolean female = "F".equalsIgnoreCase(sex);
 
 		if (over30) {

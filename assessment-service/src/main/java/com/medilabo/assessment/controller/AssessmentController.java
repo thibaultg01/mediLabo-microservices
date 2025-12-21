@@ -12,17 +12,26 @@ import org.apache.logging.log4j.Logger;
 @RequestMapping("/assess")
 public class AssessmentController {
 
-  private final AssessmentService service;
-  private static final Logger logger = LogManager.getLogger(AssessmentController.class);
+	/**
+	 * Constructor injecting the assessment service.
+	 *
+	 * @param service service handling diabetes risk assessment logic
+	 */
+	private final AssessmentService service;
 
-  public AssessmentController(AssessmentService service) {
-    this.service = service;
-  }
+	public AssessmentController(AssessmentService service) {
+		this.service = service;
+	}
 
-@GetMapping("/patient/{patientId}")
-@ResponseStatus(HttpStatus.OK)
-public AssessmentDto assess(@PathVariable long patientId)  {
-	  logger.info("tentative recuperition");
-    return service.assessByPatientId(patientId);
-  }
+	/**
+	 * Computes the diabetes risk assessment for a given patient.
+	 *
+	 * @param patientId unique identifier of the patient
+	 * @return an {@link AssessmentDto} containing the risk level and related data
+	 */
+	@GetMapping("/patient/{patientId}")
+	@ResponseStatus(HttpStatus.OK)
+	public AssessmentDto assess(@PathVariable long patientId) {
+		return service.assessByPatientId(patientId);
+	}
 }
