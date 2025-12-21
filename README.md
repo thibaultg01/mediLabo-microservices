@@ -111,9 +111,7 @@ identify improvement areas, and apply reasonable best practices.
 ### Green practices already applied
 
 - **Use of DTOs** to limit the size of data exchanged between microservices and avoid sending unnecessary fields.
-- **Pagination on list endpoints** (patients, notes) to reduce memory usage and network transfers.
 - **Clear separation of responsibilities** between microservices to avoid duplicated processing.
-- **Minimal and structured logging**, with reduced verbosity in production environments.
 - **On-demand business processing**, such as calculating the diabetes risk only when requested.
 - **Dockerized microservices**, allowing controlled resource usage and reproducible environments.
 - **Simple and sober front-end design**, limiting unnecessary client-side processing and API calls.
@@ -257,9 +255,7 @@ environnemental, mais plutôt de :
 ### Bonnes pratiques Green déjà mises en œuvre
 
 - **Utilisation de DTOs** afin de limiter la taille des données échangées entre microservices et d’éviter l’envoi de champs inutiles.
-- **Pagination des endpoints de type liste** (patients, notes) pour réduire la consommation mémoire et les transferts réseau.
 - **Séparation claire des responsabilités** entre les microservices afin d’éviter les traitements redondants.
-- **Journalisation minimale et structurée**, avec une verbosité réduite en environnement de production.
 - **Traitements métier déclenchés à la demande**, comme le calcul du risque de diabète uniquement lorsqu’il est explicitement requis.
 - **Microservices conteneurisés avec Docker**, permettant un meilleur contrôle de l’utilisation des ressources et des environnements reproductibles.
 - **Interface front-end simple et sobre**, limitant les traitements inutiles côté client ainsi que les appels API superflus.
